@@ -1,0 +1,40 @@
+name: Set deployment status
+description: 'Set deployment status'
+
+inputs:
+  environment:
+    description: 'Deployment environment name'
+    required: true
+  environment_url:
+    description: 'Sets the URL for accessing your environment'
+    required: false
+  state:
+    description: 'Deployment status'
+    required: true
+  description:
+    description: 'A short description of the status'
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        gh api \
+        --method POST \
+        -H "Accept: application/vnd.github.v3+json" \
+        /repos/$OWNER/$REPO/deployments/$DEPLOYMENT_ID/statuses \
+        -f environment="$ENVIRONMENT" \
+        -f environment_url="$ENVIRONMENT_URL" \
+        -f state="$STATE" \
+        -f description="$DESCRIPTION"
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        OWNER: ${{ github.repository_owner }}
+        REPO: ${{ github.event.repository.name }}
+        DEPLOYMENT_ID: ${{ github.event.deployment.id }}
+        ENVIRONMENT: ${{ inputs.environment }}
+        ENVIRONMENT_URL: ${{ inputs.environment_url }}
+        STATE: ${{ inputs.state }}
+        DESCRIPTION: ${{ inputs.description }}
+      shell: bash
+

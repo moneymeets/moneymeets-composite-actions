@@ -1,0 +1,42 @@
+name: 'Install Python and Poetry'
+author: 'Marcel Arns'
+description: 'Set up a specific version of Poetry with specific version of Python and install dependencies'
+inputs:
+  poetry_version:
+    description: 'Poetry version to install'
+    required: true
+    default: '1.1.13'
+  python_version:
+    description: 'Python version to use'
+    required: true
+    default: '3.10.4'
+  ssh_key:
+    description: 'SSH key to use to clone private repositories'
+    required: false
+
+outputs:
+  python-version:
+    description: 'Python version'
+    value: ${{ inputs.python_version }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install and configure Poetry
+      shell: bash
+      run: pipx install poetry==${{ inputs.poetry_version }}
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python_version }}
+        cache: 'poetry'
+
+    - name: Create virtualenv and install dependencies
+      shell: bash
+      run: |
+        if [ ! -z '${{ inputs.ssh_key }}' ]; then
+            eval '$(ssh-agent -s)'
+            ssh-add - <<< '${{ inputs.ssh_key }}'
+        fi
+
+        poetry install

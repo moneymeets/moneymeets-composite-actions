@@ -1,0 +1,33 @@
+name: Create deployment
+description: 'Create deployment'
+
+inputs:
+  access_token:
+    description: 'PAT'
+    required: true
+  environment:
+    description: 'Deployment environment name'
+    required: true
+  description:
+    description: 'A short description for the deployment'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    # Empty arrays cannot be provided with `-f`, see https://github.com/cli/cli/issues/1484
+    - run: |
+        gh api \
+        --method POST \
+        -H "Accept: application/vnd.github.v3+json" \
+        /repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/deployments \
+        --input - <<< '{
+          "description": "${{ inputs.description }}",
+          "ref": "${{ github.sha }}",
+          "environment": "${{ inputs.environment }}",
+          "required_contexts": [],
+          "payload": { "deployment_type": "forward" }
+        }'
+      env:
+        GITHUB_TOKEN: ${{ inputs.access_token }}
+      shell: bash

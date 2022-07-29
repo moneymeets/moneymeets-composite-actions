@@ -31,6 +31,12 @@ runs:
         python-version: ${{ inputs.python_version }}
         cache: 'poetry'
 
+    # ToDo: replace with `poetry lock --check` after upgrade to Poetry 1.2.X
+    - name: Check poetry.lock is up to date with pyproject.toml
+      run: |
+        exit $(poetry export -o requirements.txt | grep "Warning: The lock file is not up to date with the latest changes in pyproject.toml." | wc -l)
+      shell: bash
+
     - name: Create virtualenv and install dependencies
       shell: bash
       run: |

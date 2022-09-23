@@ -1,0 +1,34 @@
+name: Select value based on condition
+description: 'Select value based on condition'
+
+inputs:
+  condition:
+    description: 'Condition for value selection. Possible values: [true, false]'
+    required: true
+  if_condition_true:
+    description: 'Value to return if condition true'
+    required: true
+  if_condition_false:
+    description: 'Value to return if condition false'
+    required: true
+outputs:
+  value:
+    value: ${{ steps.select_value.outputs.value }}
+    description: 'Selected value based condition'
+
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        if [ "${{ inputs.condition }}" = "true" ]; then 
+          SELECTED_VALUE=${{ inputs.if_condition_true}} 
+        elif [ "${{ inputs.condition }}" = "false" ]; then 
+          SELECTED_VALUE=${{ inputs.if_condition_false }}
+        else
+          echo "Expected value for condition is 'true' or 'false'. Received '${{ inputs.condition }}'" 
+          exit 1
+        fi
+        echo ::set-output name=value::$SELECTED_VALUE
+      id: select_value
+      shell: bash
+

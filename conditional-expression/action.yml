@@ -21,9 +21,9 @@ runs:
   steps:
     - run: |
         if [ "${{ inputs.condition }}" = "true" ]; then 
-          SELECTED_VALUE="${{ inputs.if_condition_true }}"
+          SELECTED_VALUE="${{ inputs.if_true }}"
         elif [ "${{ inputs.condition }}" = "false" ]; then 
-          SELECTED_VALUE="${{ inputs.if_condition_false }}"
+          SELECTED_VALUE="${{ inputs.if_false }}"
         else
           echo "Expected value for condition is 'true' or 'false'. Received '${{ inputs.condition }}'." 
           exit 1

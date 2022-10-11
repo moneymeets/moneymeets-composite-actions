@@ -26,7 +26,8 @@ runs:
         -f environment="$ENVIRONMENT" \
         -f environment_url="$ENVIRONMENT_URL" \
         -f state="$STATE" \
-        -f description="$DESCRIPTION"
+        -f description="$DESCRIPTION" \
+        -f log_url="$LOG_URL"
       env:
         GITHUB_TOKEN: ${{ github.token }}
         OWNER: ${{ github.repository_owner }}
@@ -36,5 +37,6 @@ runs:
         ENVIRONMENT_URL: ${{ inputs.environment_url }}
         STATE: ${{ inputs.state }}
         DESCRIPTION: ${{ inputs.description }}
+        LOG_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
       shell: bash
 

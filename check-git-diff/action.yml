@@ -1,0 +1,8 @@
+name: Check git diff
+description: Check for changes between committed code and current state
+
+runs:
+  using: composite
+  steps:
+    - run: git diff --color-words --exit-code && test -z "$(git status --porcelain)"
+      shell: bash

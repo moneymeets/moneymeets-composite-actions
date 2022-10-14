@@ -1,19 +1,19 @@
 name: Create deployment
-description: 'Create deployment'
+description: Create deployment
 
 inputs:
   access_token:
-    description: 'PAT'
+    description: PAT
     required: true
   environment:
-    description: 'Deployment environment name'
+    description: Deployment environment name
     required: true
   description:
-    description: 'A short description for the deployment'
+    description: A short description for the deployment
     required: true
 
 runs:
-  using: "composite"
+  using: composite
   steps:
     # Empty arrays cannot be provided with `-f`, see https://github.com/cli/cli/issues/1484
     - run: |

@@ -1,22 +1,22 @@
 name: Set deployment status
-description: 'Set deployment status'
+description: Set deployment status
 
 inputs:
   environment:
-    description: 'Deployment environment name'
+    description: Deployment environment name
     required: true
   environment_url:
-    description: 'Sets the URL for accessing your environment'
+    description: Sets the URL for accessing your environment
     required: false
   state:
-    description: 'Deployment status'
+    description: Deployment status
     required: true
   description:
-    description: 'A short description of the status'
+    description: A short description of the status
     required: false
 
 runs:
-  using: "composite"
+  using: composite
   steps:
     - run: |
         gh api \
@@ -39,4 +39,3 @@ runs:
         DESCRIPTION: ${{ inputs.description }}
         LOG_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
       shell: bash
-

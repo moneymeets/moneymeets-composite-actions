@@ -13,7 +13,7 @@ runs:
       if: ${{ inputs.exclude_trailing_comma_path != '' }}
       shell: bash
 
-    - run: find . -name '*.py' | xargs poetry run add-trailing-comma --py36-plus
+    - run: find . -name '*.py' | xargs poetry run add-trailing-comma
       shell: bash
 
     - run: poetry run flake8

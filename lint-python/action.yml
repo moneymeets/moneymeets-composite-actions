@@ -9,7 +9,7 @@ inputs:
 runs:
   using: composite
   steps:
-    - run: find ${{ inputs.exclude_trailing_comma_path }} -name '*.py' | xargs poetry run add-trailing-comma --exit-zero-even-if-changed --py36-plus
+    - run: find ${{ inputs.exclude_trailing_comma_path }} -name '*.py' | xargs poetry run add-trailing-comma --exit-zero-even-if-changed
       if: ${{ inputs.exclude_trailing_comma_path != '' }}
       shell: bash
 

@@ -18,3 +18,8 @@ runs:
 
     - run: poetry run flake8
       shell: bash
+
+    - run: find . -name '*.json' -exec python -m json.tool --indent 2 --no-ensure-ascii {} {} \;
+      shell: bash
+
+    - uses: moneymeets/moneymeets-composite-actions/check-git-diff@master

@@ -5,6 +5,10 @@ inputs:
     required: false
     description: Ignore trailing comma changes in given path
     default: ''
+  working_directory:
+    required: false
+    description: "Working directory, defaults to GITHUB_WORKSPACE"
+    default: ${{ github.workspace }}
 
 runs:
   using: composite
@@ -14,17 +18,33 @@ runs:
 
     - uses: moneymeets/moneymeets-composite-actions/check-git-diff@master
 
+    - run: echo "ruff-available=$(poetry show ruff -q ; echo $?)" >> $GITHUB_OUTPUT
+      id: detect-ruff
+      shell: bash
+
+    - name: Run linter
+      if: steps.detect-ruff.outputs.ruff-available == 0
+      run: poetry run ruff check ${{ inputs.working_directory }}
+      shell: bash
+
+    - name: Run formatter
+      if: steps.detect-ruff.outputs.ruff-available == 0
+      run: poetry run ruff format --force-exclude --check ${{ inputs.working_directory }}
+      shell: bash
+
     # Add trailing commas only for the excluded files, and return a zero exit code
     # even if there are changes in the files. This is done so that in the next step,
     # when add-trailing-comma is run again, the command can return a non-zero exit code
     # (and thus fail the pipeline), if any changes are made.
     - run: find ${{ inputs.exclude_trailing_comma_path }} -name '*.py' | xargs poetry run add-trailing-comma --exit-zero-even-if-changed
-      if: ${{ inputs.exclude_trailing_comma_path != '' }}
+      if: inputs.exclude_trailing_comma_path != '' && steps.detect-ruff.outputs.ruff-available == 1
       shell: bash
 
     # Returns non-zero exit code if any changes are made
     - run: find . -name '*.py' | xargs poetry run add-trailing-comma
+      if: steps.detect-ruff.outputs.ruff-available == 1
       shell: bash
 
     - run: poetry run flake8
+      if: steps.detect-ruff.outputs.ruff-available == 1
       shell: bash

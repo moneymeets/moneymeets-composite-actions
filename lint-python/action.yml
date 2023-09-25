@@ -9,17 +9,22 @@ inputs:
 runs:
   using: composite
   steps:
+    - run: find . -name '*.json' -exec python -m json.tool --indent 2 --no-ensure-ascii {} {} \;
+      shell: bash
+
+    - uses: moneymeets/moneymeets-composite-actions/check-git-diff@master
+
+    # Add trailing commas only for the excluded files, and return a zero exit code
+    # even if there are changes in the files. This is done so that in the next step,
+    # when add-trailing-comma is run again, the command can return a non-zero exit code
+    # (and thus fail the pipeline), if any changes are made.
     - run: find ${{ inputs.exclude_trailing_comma_path }} -name '*.py' | xargs poetry run add-trailing-comma --exit-zero-even-if-changed
       if: ${{ inputs.exclude_trailing_comma_path != '' }}
       shell: bash
 
+    # Returns non-zero exit code if any changes are made
     - run: find . -name '*.py' | xargs poetry run add-trailing-comma
       shell: bash
 
     - run: poetry run flake8
       shell: bash
-
-    - run: find . -name '*.json' -exec python -m json.tool --indent 2 --no-ensure-ascii {} {} \;
-      shell: bash
-
-    - uses: moneymeets/moneymeets-composite-actions/check-git-diff@master

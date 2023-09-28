@@ -9,7 +9,7 @@ inputs:
 runs:
   using: composite
   steps:
-    - run: find . -name '*.json' -exec python -m json.tool --indent 2 --no-ensure-ascii {} {} \;
+    - run: find . -name '*.json' -type f -print0 | xargs -I {} -0 python -m json.tool --indent 2 --no-ensure-ascii {} {}
       shell: bash
 
     - uses: moneymeets/moneymeets-composite-actions/check-git-diff@master

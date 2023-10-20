@@ -1,13 +1,41 @@
 name: Lint Python
 description: Linting for Python projects
 
+inputs:
+  src:
+    description: "Source to run ruff. Default: '.'"
+    required: false
+    default: "."
+  exclude_trailing_comma_path:
+    required: false
+    description: Ignore trailing comma changes in given path
+    default: ''
+
 runs:
   using: composite
   steps:
+      - run: echo "ruff-available=$(grep ruff pyproject.toml | wc -l)" >> $GITHUB_OUTPUT
+        id: detect-ruff
+        shell: bash
+
       - name: Run linter
-        uses: chartboost/ruff-action@v1
+        if: steps.detect-ruff.outputs.ruff-available == 1
+        run: poetry run ruff check ${{ inputs.src }}
+        shell: bash
 
       - name: Run formatter
-        uses: chartboost/ruff-action@v1
-        with:
-          args: format --force-exclude --check
+        if: steps.detect-ruff.outputs.ruff-available == 1
+        run: poetry run ruff format --force-exclude --check ${{ inputs.src }}
+        shell: bash
+
+      - run: find ${{ inputs.exclude_trailing_comma_path }} -name '*.py' | xargs poetry run add-trailing-comma --exit-zero-even-if-changed --py36-plus
+        if: inputs.exclude_trailing_comma_path != '' && steps.detect-ruff.outputs.ruff-available != 1
+        shell: bash
+
+      - run: find . -name '*.py' | xargs poetry run add-trailing-comma
+        if: steps.detect-ruff.outputs.ruff-available != 1
+        shell: bash
+
+      - run: poetry run flake8
+        if: steps.detect-ruff.outputs.ruff-available != 1
+        shell: bash

@@ -29,22 +29,5 @@ runs:
 
     - name: Run formatter
       if: steps.detect-ruff.outputs.ruff-available == 0
-      run: poetry run ruff format --force-exclude --check ${{ inputs.working_directory }}
-      shell: bash
-
-    # Add trailing commas only for the excluded files, and return a zero exit code
-    # even if there are changes in the files. This is done so that in the next step,
-    # when add-trailing-comma is run again, the command can return a non-zero exit code
-    # (and thus fail the pipeline), if any changes are made.
-    - run: find ${{ inputs.exclude_trailing_comma_path }} -name '*.py' | xargs poetry run add-trailing-comma --exit-zero-even-if-changed
-      if: inputs.exclude_trailing_comma_path != '' && steps.detect-ruff.outputs.ruff-available == 1
-      shell: bash
-
-    # Returns non-zero exit code if any changes are made
-    - run: find . -name '*.py' | xargs poetry run add-trailing-comma
-      if: steps.detect-ruff.outputs.ruff-available == 1
-      shell: bash
-
-    - run: poetry run flake8
-      if: steps.detect-ruff.outputs.ruff-available == 1
+      run: poetry run ruff format --force-exclude --diff ${{ inputs.working_directory }}
       shell: bash

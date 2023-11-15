@@ -1,0 +1,44 @@
+name: Determine Python and Poetry versions
+description: Determine Python and Poetry versions
+
+inputs:
+  poetry_version:
+    description: "Poetry version to install"
+    required: false
+  python_version:
+    description: "Python version to use"
+    required: false
+  working_directory:
+    description: "Working directory, defaults to GITHUB_WORKSPACE"
+    required: false
+    default: ${{ github.workspace }}
+
+outputs:
+  python-version-constraint:
+    description: "Python version"
+    value: ${{ steps.detect-versions.outputs.python-version-constraint }}
+  poetry-version:
+    description: "Poetry version"
+    value: ${{ steps.detect-versions.outputs.poetry-version }}
+
+runs:
+  using: composite
+  steps:
+    - id: detect-versions
+      run: |
+        if [ -z "${{ inputs.python_version }}" ] ; then
+            PYTHON_VERSION="$(sed -n -e '/^\[metadata\]/,/^\[/p' poetry.lock | sed -n -e 's/^python-versions[[:space:]]*=[[:space:]]*//p' | tr -d \"'[:space:]'\'~^)"
+        else
+            PYTHON_VERSION="${{ inputs.python_version }}"
+        fi
+
+        if [ -z "${{ inputs.poetry_version }}" ] ; then
+            POETRY_VERSION="$(head --lines=1 poetry.lock | grep --only-matching '[0-9]\+\.[0-9]\+\.[0-9]\+')"
+        else
+            POETRY_VERSION="${{ inputs.poetry_version }}"
+        fi
+
+        echo "python-version-constraint=$PYTHON_VERSION" >> $GITHUB_OUTPUT
+        echo "poetry-version=$POETRY_VERSION" >> $GITHUB_OUTPUT
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}

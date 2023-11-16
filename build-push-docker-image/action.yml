@@ -1,0 +1,59 @@
+name: Build and Push docker image
+description: Build and Push docker image
+
+inputs:
+  poetry_version:
+    description: "Poetry version to install"
+    required: true
+  python_version:
+    description: "Python version to use"
+    required: true
+  image_tag:
+    description: "Docker image tag to use. Defaults to repository name + github sha"
+    required: false
+    default: "${{ github.event.repository.name }}-${{ github.sha }}"
+  is_pushable:
+    description: "Depicts if the image should be pushed"
+    required: false
+    default: 'true'
+  ecr_repository:
+    description: "ECR Repository to push image in. Defaults to repository name"
+    required: false
+    default: ${{ github.event.repository.name }}
+
+runs:
+  using: composite
+  steps:
+    - name: Build Image
+      env:
+        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+      run: |
+        ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+        ssh-add - <<< "$SSH_KEY"
+        docker build \
+            --build-arg PYTHON_VERSION_CONSTRAINT="${{ inputs.python_version }}" \
+            --build-arg POETRY_VERSION="${{ inputs.poetry_version }}" \
+            --ssh default=$SSH_AUTH_SOCK -t "${{ inputs.image_tag }}" .
+      shell: bash
+
+    - if: inputs.is_pushable == 'true' && github.ref == 'refs/heads/master'
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: $AWS_ACCESS_KEY_ID
+        aws-secret-access-key: $AWS_SECRET_ACCESS_KEY
+        aws-region: eu-central-1
+
+    - if: inputs.is_pushable == 'true' && github.ref == 'refs/heads/master'
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Push image to Amazon ECR
+      if: inputs.is_pushable == 'true' && github.ref == 'refs/heads/master'
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: ${{ inputs.ecr_repository }}
+        IMAGE_TAG: master-${{ github.sha }}
+      run: |
+        docker tag ${{ inputs.image_tag }} $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      shell: bash

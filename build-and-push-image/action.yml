@@ -1,0 +1,101 @@
+name: Build and Push
+description: Build docker image and push to AWS ECR
+
+inputs:
+  push_to_ecr:
+    description: Determines whether the image should be pushed
+    required: false
+    default: "false"  # ToDo: Switch default after ECR repositories are created
+  ecr_repository:
+    description: ECR repository to push image in
+    required: true
+  dockerfile_path:
+    description: Relative path to Dockerfile. Defaults to `Dockerfile`
+    required: false
+    default: Dockerfile
+
+  aws_access_key_id:
+    description: AWS access key
+    required: true
+  aws_secret_access_key:
+    description: AWS secret access key
+    required: true
+  aws_region:
+    description: AWS region
+    required: false
+    default: eu-central-1
+
+  ssh_key:
+    description: SSH key
+    required: false
+  ssh_auth_sock:
+    description: SSH auth socket
+    required: false
+    default: /tmp/ssh_agent.sock
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+
+    - uses: moneymeets/moneymeets-composite-actions/detect-python-version@master
+      id: detect-versions
+
+    - id: configure-aws-credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ inputs.aws_access_key_id }}
+        aws-secret-access-key: ${{ inputs.aws_secret_access_key }}
+        aws-region: ${{ inputs.aws_region }}
+
+    - id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Setup SSH agent
+      if: inputs.ssh_key != ''
+      id: setup-ssh-agent
+      run: |
+        export SSH_AUTH_SOCK=${{ inputs.ssh_auth_sock }}
+        ssh-agent -a ${SSH_AUTH_SOCK} > /dev/null
+        ssh-add - <<< "${{ inputs.ssh_key }}"
+        echo "ssh-auth-sock=${SSH_AUTH_SOCK}" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - uses: docker/setup-buildx-action@v3
+
+    - name: Set image url and tag
+      id: set-image-url
+      run: |
+        IMAGE_URL=${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr_repository }}
+        echo "image-url=${IMAGE_URL}" >> $GITHUB_OUTPUT
+
+        if [[ "${{ github.ref_name }}" == "master" ]]; then
+          IMAGE_TAG=master-${{ github.sha }}
+        else
+          IMAGE_TAG=$(echo ${{ github.ref_name }} | awk '{print tolower($0)}' | sed -e 's|/|-|')
+        fi
+
+        echo "image-url-with-tag=${IMAGE_URL}:${IMAGE_TAG}" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Build and push
+      uses: docker/build-push-action@v5
+      env:
+        IMAGE_URL: ${{ steps.set-image-url.outputs.image-url }}
+        IMAGE_URL_WITH_TAG: ${{ steps.set-image-url.outputs.image-url-with-tag }}
+        DOCKERFILE_HASH: ${{ hashFiles(format('{0}/{1}', github.workspace, inputs.dockerfile_path), format('{0}/{1}', github.workspace, 'poetry.lock')) }}
+      with:
+        context: .
+        file: ${{ github.workspace }}/${{ inputs.dockerfile_path }}
+        push: ${{ inputs.push_to_ecr }}
+        pull: true
+        tags: ${{ env.IMAGE_URL_WITH_TAG }}
+        cache-from: |
+          ${{ inputs.push_to_ecr == 'true' && format('type=registry,ref={0}:cache-{1}', env.IMAGE_URL, env.DOCKERFILE_HASH) || '' }}
+        cache-to: |
+          ${{ inputs.push_to_ecr == 'true' && format('mode=max,image-manifest=true,type=registry,ref={0}:cache-{1}', env.IMAGE_URL, env.DOCKERFILE_HASH) || '' }}
+        ssh: |
+          ${{ inputs.ssh_key != '' && format('default={0}', steps.setup-ssh-agent.outputs.ssh-auth-sock) || '' }}
+        build-args: |
+          PYTHON_VERSION_CONSTRAINT=${{ steps.detect-versions.outputs.python-version-constraint }}
+          POETRY_VERSION=${{ steps.detect-versions.outputs.poetry-version }}

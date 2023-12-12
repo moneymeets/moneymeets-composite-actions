@@ -72,7 +72,7 @@ runs:
         if [[ "${{ github.ref_name }}" == "master" ]]; then
           IMAGE_TAG=master-${{ github.sha }}
         else
-          IMAGE_TAG=$(echo ${{ github.ref_name }} | awk '{print tolower($0)}' | sed -e 's|/|-|')
+          IMAGE_TAG=$(echo ${{ github.ref_name }} | awk '{print tolower($0)}' | sed -e 's|/|-|g')
         fi
 
         echo "image-url-with-tag=${IMAGE_URL}:${IMAGE_TAG}" >> $GITHUB_OUTPUT

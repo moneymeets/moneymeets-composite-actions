@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "ecs-task-definition-deploy"
+version = "0.1.0"
+description = "Deploy Task Definition Helpers"
+authors = ["moneymeets GmbH <service@moneymeets.com>"]
+
+packages = [
+    { include = "actions_helper" }
+]
+
+[tool.poetry.dependencies]
+python = "~3.12"
+
+click="*"
+boto3 = "*"
+
+[tool.poetry.dev-dependencies]
+ruff = "*"
+
+[tool.poetry.scripts]
+actions_helper = 'actions_helper.main:cli'
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

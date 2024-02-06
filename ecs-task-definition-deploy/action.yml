@@ -1,5 +1,5 @@
-name: Determine Python and Poetry versions
-description: Determine Python and Poetry versions
+name: Create task definition revision
+description: Use image_uri to create new task definition revision, and deregister previous active task definition
 
 inputs:
   application_id:
@@ -8,10 +8,6 @@ inputs:
   image_uri:
     description: The URI of the container image to insert into the ECS task definition
     required: true
-  deregister_previous:
-    description: Determines whether to deregister previous active task definition
-    required: false
-    default: "false"
 
   aws_access_key_id:
     description: AWS access key
@@ -26,10 +22,10 @@ inputs:
 
 outputs:
   previous-task-definition-arn:
-    description: "Python version"
+    description: "ARN of previous task definition revision"
     value: ${{ steps.get-github-action-task-definition-arn.outputs.task-definition-arn }}
   latest-task-definition-arn:
-    description: "Python version"
+    description: "ARN of new task definition revision"
     value: ${{ steps.deploy-task-definition.outputs.task-definition-arn }}
 
 runs:
@@ -42,9 +38,6 @@ runs:
         aws-secret-access-key: ${{ inputs.aws_secret_access_key }}
         aws-region: ${{ inputs.aws_region }}
 
-    - id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
-
     - name: Setup Python + Poetry
       uses: moneymeets/action-setup-python-poetry@master
       with:
@@ -52,7 +45,7 @@ runs:
         # ToDo: Re-enable cache when https://github.com/actions/setup-python/issues/361 is fixed
         poetry_cache_enabled: 'false'
 
-    - name: Get latest active task definition created by Pulumi
+    - name: Get latest active task definition revision created by Pulumi
       id: get-pulumi-task-definition-arn
       shell: bash
       env:
@@ -65,7 +58,7 @@ runs:
         )
         echo "task-definition-arn=${TASK_DEFINITION_ARN}" >> $GITHUB_OUTPUT
 
-    - name: Prepare task-definition.json based on active Pulumi latest
+    - name: Download and check task definition
       shell: bash
       run: |
         aws ecs describe-task-definition \
@@ -80,7 +73,7 @@ runs:
             exit 1
         fi
 
-    - name: Replace PLACEHOLDER in task definitions with Image URI
+    - name: Replace PLACEHOLDER in task definition with image URI
       shell: bash
       run: |
         jq --arg image_uri "${{ inputs.image_uri }}" '.containerDefinitions[].image |= $image_uri' \
@@ -99,22 +92,13 @@ runs:
             --allow-empty
         )
         echo "task-definition-arn=${TASK_DEFINITION_ARN}" >> $GITHUB_OUTPUT
-    
-    - name: Deregister previous task definition
-      shell: bash
-      if: inputs.deregister_previous == 'true' && steps.get-github-action-task-definition-arn.outputs.task-definition-arn != ''
-      run: |
-        aws ecs deregister-task-definition \
-          --task-definition ${{ steps.get-github-action-task-definition-arn.outputs.task-definition-arn }} \
-          --region ${{ inputs.aws_region }}
 
-    - name: Deploy task definition to Amazon ECS
+    - uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       id: deploy-task-definition
-      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
         task-definition: task-definition.json
 
-    - name: Add tags to the deployed local-exec task definition
+    - name: Add tags to the new task definition revision
       shell: bash
       run: |
         aws ecs tag-resource \

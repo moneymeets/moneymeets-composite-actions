@@ -60,7 +60,15 @@ def get_active_task_definition_arn_by_tag(
         )
     ]
 
-    if allow_empty and not active_task_definitions:
+    if (
+        allow_empty
+        and len(active_task_definition_arns) == 1
+        and {"key": "created_by", "value": "Pulumi"}
+        in ecs_client.describe_task_definition(
+            taskDefinition=active_task_definition_arns[0],
+            include=["TAGS"],
+        )["tags"]
+    ):
         return ""
 
     try:

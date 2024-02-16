@@ -8,8 +8,6 @@ runs:
       with:
         path: master
         ref: master
-        sparse-checkout: |
-          poetry.lock
 
     - uses: moneymeets/moneymeets-composite-actions/detect-python-version@master
       id: detect-version-on-master
@@ -17,9 +15,6 @@ runs:
         working_directory: ${{ format('{0}/master', github.workspace) }}
 
     - uses: actions/checkout@v4
-      with:
-        sparse-checkout: |
-          poetry.lock
 
     - uses: moneymeets/moneymeets-composite-actions/detect-python-version@master
       id: detect-version-on-feature-branch

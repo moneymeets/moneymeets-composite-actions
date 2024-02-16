@@ -1,0 +1,38 @@
+name: Block Poetry version downgrade
+description: Block Poetry version downgrade
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        path: master
+        ref: master
+        sparse-checkout: |
+          poetry.lock
+
+    - uses: moneymeets/moneymeets-composite-actions/detect-python-version@master
+      id: detect-version-on-master
+      with:
+        working_directory: ${{ format('{0}/master', github.workspace) }}
+
+    - uses: actions/checkout@v4
+      with:
+        sparse-checkout: |
+          poetry.lock
+
+    - uses: moneymeets/moneymeets-composite-actions/detect-python-version@master
+      id: detect-version-on-feature-branch
+
+    - shell: bash
+      env:
+        MASTER_POETRY_VERSION: ${{ steps.detect-version-on-master.outputs.poetry-version }}
+        FEATURE_POETRY_VERSION: ${{ steps.detect-version-on-feature-branch.outputs.poetry-version }}
+      run: |
+        if dpkg --compare-versions "$FEATURE_POETRY_VERSION" "lt" "$MASTER_POETRY_VERSION"; then
+          echo "::error file=poetry.lock,line=1::Poetry version downgrade from ${MASTER_POETRY_VERSION} to ${FEATURE_POETRY_VERSION} not allowed"
+          exit 1
+        else
+          echo "Passed, master=$MASTER_POETRY_VERSION; feature=$FEATURE_POETRY_VERSION"
+        fi
+

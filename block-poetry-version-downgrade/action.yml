@@ -15,9 +15,13 @@ runs:
         working_directory: ${{ format('{0}/master', github.workspace) }}
 
     - uses: actions/checkout@v4
+      with:
+        path: feature-branch
 
     - uses: moneymeets/moneymeets-composite-actions/detect-python-version@master
       id: detect-version-on-feature-branch
+      with:
+        working_directory: ${{ format('{0}/feature-branch', github.workspace) }}
 
     - shell: bash
       env:

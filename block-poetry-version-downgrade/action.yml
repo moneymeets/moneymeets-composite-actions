@@ -35,3 +35,5 @@ runs:
           echo "Passed, master=$MASTER_POETRY_VERSION; feature=$FEATURE_POETRY_VERSION"
         fi
 
+    - run: rm -r "${{ format('{0}/master', github.workspace) }}" && rm -r "${{ format('{0}/feature-branch', github.workspace) }}"
+      shell: bash

@@ -10,6 +10,8 @@ runs:
         ref: master
 
     - uses: moneymeets/moneymeets-composite-actions/detect-python-version@master
+      # This is required for initial repositories
+      if: ${{ hashFiles('master/poetry.lock') != '' }}
       id: detect-version-on-master
       with:
         working_directory: ${{ format('{0}/master', github.workspace) }}
@@ -24,6 +26,8 @@ runs:
         working_directory: ${{ format('{0}/feature-branch', github.workspace) }}
 
     - shell: bash
+      # This is required for initial repositories
+      if: ${{ hashFiles('master/poetry.lock') != '' && hashFiles('feature-branch/poetry.lock') != '' }}
       env:
         MASTER_POETRY_VERSION: ${{ steps.detect-version-on-master.outputs.poetry-version }}
         FEATURE_POETRY_VERSION: ${{ steps.detect-version-on-feature-branch.outputs.poetry-version }}

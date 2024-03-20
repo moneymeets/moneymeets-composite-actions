@@ -5,7 +5,7 @@ inputs:
   push_to_ecr:
     description: Determines whether the image should be pushed
     required: false
-    default: "false"  # ToDo: Switch default after ECR repositories are created
+    default: "true"
   ecr_repository:
     description: ECR repository to push image in
     required: true

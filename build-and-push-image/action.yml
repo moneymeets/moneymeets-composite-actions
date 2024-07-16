@@ -99,3 +99,4 @@ runs:
         build-args: |
           PYTHON_VERSION_CONSTRAINT=${{ steps.detect-versions.outputs.python-version-constraint }}
           POETRY_VERSION=${{ steps.detect-versions.outputs.poetry-version }}
+          SENTRY_RELEASE=${{ github.sha }}

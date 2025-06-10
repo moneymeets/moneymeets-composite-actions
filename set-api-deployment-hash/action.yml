@@ -1,0 +1,20 @@
+name: Set deployment hash
+description: Write SHA for current deployment to S3
+
+inputs:
+  s3-bucket:
+    description: S3 bucket
+    required: true
+  deployment-reference-file:
+    description: Filename to write the hash to and upload to S3
+    required: false
+    default: 'active-deployment-sha-${{ github.event.deployment.environment }}.txt'
+
+runs:
+  using: composite
+  steps:
+    - name: Update active deployment sha
+      run: |
+        echo -e "${{ github.sha }}" > ${{ inputs.deployment-reference-file }}
+        aws s3 cp ${{ inputs.deployment-reference-file }} s3://${{ inputs.s3-bucket }}/${{ github.event.repository.name }}/
+      shell: bash

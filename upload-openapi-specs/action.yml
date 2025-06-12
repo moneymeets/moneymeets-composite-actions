@@ -1,0 +1,29 @@
+name: Upload specs
+description: Upload OpenAPI spec files to S3
+
+inputs:
+  s3-bucket:
+    description: S3 bucket
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Set environment variables
+      run: echo "S3_ARTIFACT_PATH_WITH_SHA=s3://${{ inputs.s3-bucket }}/${{ github.event.repository.name }}/${{ github.sha }}" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Upload OpenAPI spec files to S3
+      run: aws s3 sync ${{ env.API_SPEC_PATH }} ${{ env.S3_ARTIFACT_PATH_WITH_SHA }}/${{ github.event.repository.name }}/${{ env.API_SPEC_PATH }}
+      shell: bash
+      env:
+        API_SPEC_PATH: api/spec/
+
+    - name: Upload moneymeets-specs files to S3
+      run: |
+        # Get path for installed moneymeets-specs dependency
+        MONEYMEETS_SPECS_VIRTUALENV_PATH=$(find $(poetry env info --path)/lib -wholename */${{ env.MONEYMEETS_SPECS_PATH }})
+        aws s3 sync $MONEYMEETS_SPECS_VIRTUALENV_PATH ${{ env.S3_ARTIFACT_PATH_WITH_SHA }}/moneymeets-specs/${{ env.MONEYMEETS_SPECS_PATH }} --exclude '*' --include '*.yml' --include '*.yaml'
+      shell: bash
+      env:
+        MONEYMEETS_SPECS_PATH: "moneymeets/specs/moneymeets"

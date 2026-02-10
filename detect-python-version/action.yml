@@ -27,7 +27,7 @@ runs:
     - id: detect-versions
       run: |
         if [ -z "${{ inputs.python_version }}" ] ; then
-            PYTHON_VERSION="$(sed -n -e '/^\[metadata\]/,/^\[/p' poetry.lock | sed -n -e 's/^python-versions[[:space:]]*=[[:space:]]*//p' | tr -d \"'[:space:]'\'~^)"
+            PYTHON_VERSION="$(sed -n -e '/^\[metadata\]/,/^\[/p' poetry.lock | sed -n -e 's/^python-versions[[:space:]]*=[[:space:]]*"~[=]*\([0-9]*\.[0-9]*\).*/\1/p')"
         else
             PYTHON_VERSION="${{ inputs.python_version }}"
         fi

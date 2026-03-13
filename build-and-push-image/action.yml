@@ -36,7 +36,7 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - uses: moneymeets/moneymeets-composite-actions/detect-python-version@master
       id: detect-versions
@@ -61,7 +61,7 @@ runs:
         echo "ssh-auth-sock=${SSH_AUTH_SOCK}" >> $GITHUB_OUTPUT
       shell: bash
 
-    - uses: docker/setup-buildx-action@v3
+    - uses: docker/setup-buildx-action@v4
 
     - name: Set image url and tag
       id: set-image-url
@@ -79,7 +79,7 @@ runs:
       shell: bash
 
     - name: Build and push
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v7
       env:
         IMAGE_URL: ${{ steps.set-image-url.outputs.image-url }}
         IMAGE_URL_WITH_TAG: ${{ steps.set-image-url.outputs.image-url-with-tag }}

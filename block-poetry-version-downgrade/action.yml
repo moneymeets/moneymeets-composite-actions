@@ -4,7 +4,7 @@ description: Block Poetry version downgrade
 runs:
   using: composite
   steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         path: master
         ref: master
@@ -16,7 +16,7 @@ runs:
       with:
         working_directory: ${{ format('{0}/master', github.workspace) }}
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         path: feature-branch
 
